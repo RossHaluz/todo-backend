@@ -5,6 +5,7 @@ const {
   getBoardDetails,
   getAllBoards,
   getBoardByUser,
+  addMemberToBillboard,
 } = require("../controllers/boardController");
 const { boardSchema } = require("../helpers");
 const { checkAuth, validateBody } = require("../middlewars");
@@ -29,5 +30,8 @@ router.delete("/delete/:boardId", deleteBoard);
 
 //Get board details
 router.get("/:boardId", getBoardDetails);
+
+//Add member to board
+router.post("/:billboardId/member", addMemberToBillboard);
 
 module.exports = router;

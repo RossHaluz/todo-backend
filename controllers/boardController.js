@@ -9,7 +9,18 @@ const getAllBoards = async (req, res) => {
     },
   });
 
-  return res.status(200).json(HttpSuccess({ boards }));
+  const memberBoards = await prismadb.billboard.findMany({
+    where: {
+      members: {
+        some: { userId },
+      },
+    },
+    include: {
+      members: true,
+    },
+  });
+
+  return res.status(200).json(HttpSuccess({ boards, memberBoards }));
 };
 
 const createBoard = async (req, res) => {
@@ -111,6 +122,42 @@ const getBoardByUser = async (req, res) => {
   return res.status(200).json(HttpSuccess({ board }));
 };
 
+const addMemberToBillboard = async (req, res) => {
+  const { billboardId } = req.params;
+  const { email, role } = req.body;
+
+  const user = await prismadb.user.findFirst({
+    where: {
+      email,
+    },
+  });
+
+  if (!user) {
+    throw HttpError("User not found", 404);
+  }
+
+  const existingMember = await prismadb.billboardMember.findFirst({
+    where: {
+      userId: user?.id,
+      billboardId: billboardId,
+    },
+  });
+
+  if (existingMember) {
+    throw HttpError("User already a member", 400);
+  }
+
+  const newMember = await prismadb.billboardMember.create({
+    data: {
+      billboardId,
+      userId: user?.id,
+      role,
+    },
+  });
+
+  return res.status(200).json(HttpSuccess({ newMember }));
+};
+
 module.exports = {
   getAllBoards: CtrlWrapper(getAllBoards),
   createBoard: CtrlWrapper(createBoard),
@@ -119,4 +166,5 @@ module.exports = {
   getBoardDetails: CtrlWrapper(getBoardDetails),
   getBoardDetails: CtrlWrapper(getBoardDetails),
   getBoardByUser: CtrlWrapper(getBoardByUser),
+  addMemberToBillboard: CtrlWrapper(addMemberToBillboard),
 };
